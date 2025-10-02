@@ -1,24 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseClient, TABLE_NAMES } from 'utils/supabase-util';
 import { CreateHabitDto } from './dto/create-habit.dto';
 import { UpdateHabitDto } from './dto/update-habit.dto';
+import { Habit } from './entities/habit.entity';
 
-dotenv.config();
-
-const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
-const SUPABASE_SECRET = process.env.SUPABASE_SECRET ?? '';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET);
+const supabase = createSupabaseClient();
 
 @Injectable()
 export class HabitsService {
-  create(createHabitDto: CreateHabitDto) {
-    return 'This action adds a new habit';
+  async create(createHabitDto: CreateHabitDto): Promise<Habit> {
+    const { data, error } = await supabase.from(TABLE_NAMES.HABITS)
+      .insert(createHabitDto)
+      .select('*')
+      .single();
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
   }
 
-  async findAll() {
-    const { data, error } = await supabase.from('Habits')
+  async findAll(): Promise<Habit[]> {
+    const { data, error } = await supabase.from(TABLE_NAMES.HABITS)
       .select('*');
     if (error) {
       throw new Error(error.message);
@@ -26,15 +28,35 @@ export class HabitsService {
     return data;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} habit`;
+  async findOne(id: number): Promise<Habit> {
+    const { data, error } = await supabase.from(TABLE_NAMES.HABITS)
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
   }
 
-  update(id: number, updateHabitDto: UpdateHabitDto) {
-    return `This action updates a #${id} habit`;
+  async update(id: number, updateHabitDto: UpdateHabitDto) {
+    const { data, error } = await supabase.from(TABLE_NAMES.HABITS)
+      .update(updateHabitDto)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} habit`;
+  async delete(id: number): Promise<void> {
+    const { error } = await supabase.from(TABLE_NAMES.HABITS)
+      .delete()
+      .eq('id', id);
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 }
